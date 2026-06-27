@@ -6,7 +6,7 @@ def validar_tipo(tipo):
     return tipo
 # Validador de tipos, tem que estar a lista e ter no maximo 2 tipos, usando isintance para ser elegante. Além disso ele valida a lista denovo.
 def validar_quant_tipos(tipos):
-    # Se vier só 1 tipo (string) + já transforma em lista
+    # Se vier só 1 tipo (string) já transforma em lista
     if isinstance(tipos, str):
         tipos = [tipos] 
     # Verifica formato, se não estiver em lista só para garantir
@@ -32,12 +32,13 @@ class Player:
 
 class Move:
     # o contato seria o fisíco ou especial futuramente vou botar os moves de status ou terreno
-    def __init__(self, nome, tipo, contato, dano, alvo): # Por equanto apenas moves de dano porque eu to com preguiça
+    def __init__(self, nome, tipo, contato, dano, alvo, acerto): # Por equanto apenas moves de dano porque eu to com preguiça
         self.nome = nome
         self.tipo = validar_tipo(tipo)
         self.contato = contato
         self.dano = dano
         self.alvo = alvo
+        self.acerto = acerto
 
 class Pokemon:
     def __init__(self, poke, nome, hp, cond, tipo, ability, moves, item, stat_hp, stat_atk, stat_deff, stat_spatk, stat_spdeff, stat_speed): 
@@ -79,6 +80,7 @@ class Pokemon:
     def estar_vivo(self):
         return self.hp > 0
     
+import copy # Vai ser usado para copiar o pokemon do dicionario (no caso de pokemon selvagem)
 class Batalha:
     def __init__(self, jogador, oponente, trainer=False):
         self.jogador = jogador
@@ -89,11 +91,11 @@ class Batalha:
         if self.pkm_player is None:
             raise ValueError(f"O jogador {jogador.nome} não tem nenhum Pokémon vivo para batalhar!") 
 
-        # Define o Pokémon do oponente
-        if self.oponente.equipe:
+        # Define o Pokémon do oponente e o tipo de oponente 
+        if self.trainer:
             self.pkm_oponente = self._obter_primeiro_vivo(oponente.equipe)
             if self.pkm_oponente is None:
-                raise ValueError(f"O oponente {oponente.nome} não tem nenhum Pokémon vivo para batalhar!") # Só para garantir que não vai dar um erro
+                raise ValueError(f"O oponente {trainer.nome} não tem nenhum Pokémon vivo para batalhar!") # Só para garantir que não vai dar um erro
         else:
             # Por enquanto não funciona já que não tem um dicionario com pokemons 
             if not oponente.estar_vivo():
@@ -106,4 +108,12 @@ class Batalha:
             if pkm.estar_vivo():
                 return pkm
         return None  # Retorna None se todo mundo estiver morto, depois vou fazer um gameover caso isso seja none
-        
+    
+    def comecar_batalha(self):
+        if self.trainer.nome:
+            print(f"Você foi desafiado, {self.trainer.nome} quer batalhar!")
+        else:
+            print(f"Você encontrou um {self.pkm_oponente} selvagem!")
+        while self.pkm_player.estar_vivo() and self.pkm_oponente.estar_vivo():
+            self.executar_turno()
+        self.finalizar_batalha() # Ainda tenho que criar a função anunciando o vencedor e etc....
