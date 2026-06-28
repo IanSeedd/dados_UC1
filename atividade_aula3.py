@@ -1,16 +1,16 @@
 # ----------------- Sistema de medias:
-print("Faça seu cadastro de aluno para saber sua media atual: ")
-nome = input("Digite seu nome: ")
-idade = int(input("Digite sua idade: "))
-n1 = float(input("Digite sua primeira nota: "))
-n2 = float(input("Digite sua segunda nota: "))
-media = (n1 + n2)/2
-if media >= 7:
-    print(f"Nome: {nome} | Idade: {idade} anos | Média: {media} | Situação: Aprovado")
-elif media >= 5:
-    print(f"Nome: {nome} | Idade: {idade} anos | Média: {media} | Situação: Recuperação")
-else:
-    print(f"Nome: {nome} | Idade: {idade} anos | Média: {media} | Situação: Reprovado")
+# print("Faça seu cadastro de aluno para saber sua media atual: ")
+# nome = input("Digite seu nome: ")
+# idade = int(input("Digite sua idade: "))
+# n1 = float(input("Digite sua primeira nota: "))
+# n2 = float(input("Digite sua segunda nota: "))
+# media = (n1 + n2)/2
+# if media >= 7:
+#     print(f"Nome: {nome} | Idade: {idade} anos | Média: {media} | Situação: Aprovado")
+# elif media >= 5:
+#     print(f"Nome: {nome} | Idade: {idade} anos | Média: {media} | Situação: Recuperação")
+# else:
+#     print(f"Nome: {nome} | Idade: {idade} anos | Média: {media} | Situação: Reprovado")
 
 # ----------------- Prateleira de mercado:
 arroz = 29.90
@@ -19,22 +19,29 @@ macarrao = 4.30
 m_tomate = 3.70
 oleo_soja = 8.90
 conta = 0
-e1 = int(input(f"Deseja comprar Arroz 5kg por R${arroz}(1. Sim/2. Não)?"))
-e2 = int(input(f"Deseja comprar Feijão 1kg por R${feijao}(1. Sim/2. Não)?"))
-e3 = int(input(f"Deseja comprar Macarrão 500g por R${macarrao}(1. Sim/2. Não)?"))
-e4 = int(input(f"Deseja comprar Molho De Tomate por R${m_tomate}(1. Sim/2. Não)?"))
-e5 = int(input(f"Deseja comprar Óleo de Soja 900ml por R${oleo_soja}(1. Sim/2. Não)?"))
-match e1:
-    case 1: conta += arroz
-match e2:
-    case 1: conta += feijao
-match e3:
-    case 1: conta += macarrao
-match e4:
-    case 1: conta += m_tomate
-match e5:
-    case 1: conta += oleo_soja
-print(f"Sua conta foi: R${conta}")
+# Poderia ter usado o .lower() mas preguiça, o if é apenas para não repetir o match e ficar confuso
+if int(input(f"Deseja comprar Arroz 5kg por R${arroz}(1. Sim/2. Não)?")) == 1:
+    conta += arroz
+if int(input(f"Deseja comprar Feijão 1kg por R${feijao}(1. Sim/2. Não)?")) == 1:
+    conta += feijao
+if int(input(f"Deseja comprar Macarrão 500g por R${macarrao}(1. Sim/2. Não)?")) == 1:
+    conta += macarrao
+if int(input(f"Deseja comprar Molho De Tomate por R${m_tomate}(1. Sim/2. Não)?")) == 1:
+    conta += m_tomate
+if int(input(f"Deseja comprar Óleo de Soja 900ml por R${oleo_soja}(1. Sim/2. Não)?")) == 1:
+    conta += oleo_soja
+print(f"Sua conta foi: R${conta} \nComo deseja pagar?: 1. Credito(Acréscimo de 10%) 2. Debito(Sem alteração) 3. Dinheiro(Desconto de 5%)")
+match int(input("")):
+    case 1:
+        conta += conta*0.1
+        print(f"Total a pagar: {conta:.2f}")
+    case 2:
+        print(f"Total a pagar: {conta:.2f}")
+    case 3:
+        conta -= conta*0.05
+        print(f"Total a pagar: {conta:.2f}")
+    case _:
+        print("Inválido")
 
 # ----------------- Calculadora de gorjeta:
 nota = int(input("Em uma escala de 1 a 4 avalie o serviço: "))
@@ -80,20 +87,15 @@ fritas = 9
 refri = 6
 suco = 7
 conta = 0
-e1 = int(input(f"Deseja adicionar x-burger por R${xburger}(1. Sim/2. Não)?"))
-e2 = int(input(f"Deseja adicionar x-bacon por R${xbacon}(1. Sim/2. Não)?"))
-e3 = int(input(f"Deseja adicionar fritas por R${fritas}(1. Sim/2. Não)?"))
-e4 = int(input(f"Deseja adicionar refrigerante por R${refri}(1. Sim/2. Não)?"))
-e5 = int(input(f"Deseja adicionar suco por R${suco}(1. Sim/2. Não)?"))
-match e1:
+match int(input(f"Deseja adicionar x-burger por R${xburger}(1. Sim/2. Não)?")):
     case 1: conta += xburger
-match e2:
+match int(input(f"Deseja adicionar x-bacon por R${xbacon}(1. Sim/2. Não)?")):
     case 1: conta += xbacon
-match e3:
+match int(input(f"Deseja adicionar fritas por R${fritas}(1. Sim/2. Não)?")):
     case 1: conta += fritas
-match e4:
+match int(input(f"Deseja adicionar refrigerante por R${refri}(1. Sim/2. Não)?")):
     case 1: conta += refri
-match e5:
+match int(input(f"Deseja adicionar suco por R${suco}(1. Sim/2. Não)?")):
     case 1: conta += suco
 if conta > 40:
     conta = conta-(conta*0.1)
