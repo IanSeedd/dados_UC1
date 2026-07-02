@@ -83,6 +83,7 @@ class Pokemon:
 import copy # Vai ser usado para copiar o pokemon do dicionario (no caso de pokemon selvagem)
 class Batalha:
     def __init__(self, jogador, oponente, trainer=False):
+        self.turnos = 0
         self.jogador = jogador
         self.oponente = oponente # Treinador ou Pokemon singular
         self.trainer = trainer # Se for True tem time
@@ -108,12 +109,150 @@ class Batalha:
             if pkm.estar_vivo():
                 return pkm
         return None  # Retorna None se todo mundo estiver morto, depois vou fazer um gameover caso isso seja none
+    # Condição de vitória, é deselegante mas serve. Não consegui pensar em nada melhor, mesmo sabendo que tem 3 funções de checar se tem algum pokemon vivo.....
+    def _time_vivo(self, treinador_ou_pkm):
+        # Se for uma batalha de treinador, checa a equipe inteira
+        if hasattr(treinador_ou_pkm, 'equipe'):
+            return any(pkm.estar_vivo() for pkm in treinador_ou_pkm.equipe)
+        # Se for um Pokémon selvagem isolado, checa apenas o HP dele
+        return treinador_ou_pkm.estar_vivo()
+    def _mostrar_equipe(self, jogador):
+        print(f"\n====== EQUIPE DE {jogador.nome.upper()} ======")
+        for i, pkm in enumerate(jogador.equipe, start=1):
+            # Visual bonito baseado na vida do PKM
+            if pkm.estar_vivo():
+                status_hp = f"HP: {pkm.hp}"
+            else:
+                status_hp = "[DESMAIADO]"
+            # Mostra a posição, o nome e o hp do pokemon
+            print(f"[{i}] {pkm.nome:<12} | {status_hp}")
+        print("======================================")
+    def _troca_jogador(self):
+        if not self.pkm_player.estar_vivo(): # Caso seja uma troca forçada
+            print(f"\n{self.pkm_player.nome} desmaiou e não pode mais lutar!")
+        while True:
+            # 1. Mostra o painel com todo o time
+            self._mostrar_equipe(self.jogador)
+            try:
+                escolha = int(input("Escolha o número do Pokémon que vai entrar: ")) - 1            
+                if escolha < 0 or escolha >= len(self.jogador.equipe):
+                    print("Escolha inválida! Digite um número da lista.")
+                    continue 
+                pkm_escolhido = self.jogador.equipe[escolha]
+                # O pokemon escolhido não pode ser o ativo
+                if pkm_escolhido == self.pkm_player:
+                    print(f"{pkm_escolhido.nome} já é o seu Pokémon ativo em campo!")
+                    continue               
+                # Valida se o escolhido está vivo
+                if not pkm_escolhido.estar_vivo():
+                    print(f"{pkm_escolhido.nome} está desmaiado! Escolha outro.")
+                    continue
+                # Se o player selecionou a troca sem querer e quer voltar
+                if self.pkm_player.estar_vivo() == True and escolha == 0: # 0 porque a escolha subtrai 1
+                    return False # Retoma false pra saber que não teve troca
+                self.pkm_player = pkm_escolhido
+                print(f"\nVai, {self.pkm_player.nome}!")
+                break  
+            except ValueError:
+                print("Por favor, digite um número válido.")
     
     def comecar_batalha(self):
         if self.trainer.nome:
             print(f"Você foi desafiado, {self.trainer.nome} quer batalhar!")
         else:
             print(f"Você encontrou um {self.pkm_oponente} selvagem!")
-        while self.pkm_player.estar_vivo() and self.pkm_oponente.estar_vivo():
+        while self._time_vivo(self.jogador) and self._time_vivo(self.oponente):
             self.executar_turno()
+            if self.fugir(): # Quebra o loop caso for true
+                break
         self.finalizar_batalha() # Ainda tenho que criar a função anunciando o vencedor e etc....
+    def _menu(self):
+        while True:
+            print(f"\n╔══════════════════════════════════════════════════════╗")
+            print(f"║ {self.pkm_player.nome:<15} HP: {self.pkm_player.hp:<6} vs   {self.pkm_oponente.nome:<14} HP: {self.pkm_oponente.hp:<4} ║")
+            print(f"╚══════════════════════════════════════════════════════╝")
+            print("┌───────────────────────────┐")
+            print("│ 1. LUTAR      2. TIME     │")
+            print("│ 3. MOCHILA    4. FUGIR    │")
+            print("└───────────────────────────┘")
+            escolha = input("O que você vai fazer? ").strip() # Strip apenas pela elegancia 
+            if escolha == "1":
+                move = self._menu_moves()
+                if move is not None:
+                    return ("atacar", move)
+            elif escolha == "2":
+                if self._troca_jogador(): 
+                    return ("trocar", None)
+                    # Se retornou False(no caso o "voltar") o while True repete    
+            elif escolha == "3":
+                print("\n[Mochila ainda não implementada! To com preguiça...]")    
+            elif escolha == "4":
+                if not self.trainer:
+                    print(f"Você fugiu da batalha com sucesso!") # por enquanto a fuga vai ser 100% garantida.
+                    return ("fugir", None)
+                else:
+                    print("Você não pode fugir de batalhas contra treinadores!")
+            else:
+                print("Opção inválida!")
+    def _menu_moves(self):
+        while True:
+            print("\n┌──────────────────────────────────────────────┐")
+            print("│ MOVES:                             │")
+            moves = self.pkm_player.moves
+            # Loop de 2 em 2 para fazer as duas colunas
+            for i in range(0, len(moves), 2):
+                # Move da esquerda (sempre existe no loop)
+                m_esq = moves[i]
+                txt_esq = f"[{i+1}] {m_esq.nome} (D:{m_esq.dano}|A:{m_esq.acerto}%)"
+                # Move da direita (só gera texto se ele existir na lista)
+                if i + 1 < len(moves):
+                    m_dir = moves[i+1]
+                    txt_dir = f"[{i+2}] {m_dir.nome} (D:{m_dir.dano}|A:{m_dir.acerto}%)"
+                else:
+                    txt_dir = "" # Fica vazio se o Pokémon tiver golpes ímpares (ex: 1 ou 3 moves)
+                # O :<26 formata o texto para ocupar exatamente 26 espaços
+                print(f"│ {txt_esq:<26} {txt_dir:<26} │")   
+            print("│ [0] VOLTAR                                   │")
+            print("└──────────────────────────────────────────────┘")
+            try:
+                escolha = int(input("Escolha um movimento: "))
+                if escolha == 0:
+                    return None  # Indica que o jogador quer voltar ao menu principal      
+                if 1 <= escolha <= len(moves):
+                    return moves[escolha - 1]
+                else:
+                    print("Número inválido!")
+            except ValueError:
+                print("Por favor, digite um número válido.")
+    def executar_turno(self):
+        self.turnos += 1
+        print(f"\n======== TURNO {self.turnos} ========")
+        acao_player = self._menu() # A saida é em forma de tupla ()
+        acao_tipo = acao_player[0]
+        acao_detalhe = acao_player[1] # Se for move ou troca
+        if acao_tipo == "fugir":
+            self.fugir() # falta criar, já que usamos o while logo enquanto a condição estiver funcionando a batalha continua
+        
+    def npc(self):
+        import random # Sim ele vai ser "burro"
+        acao_bot = random.randint(1, 2)
+        if not self.trainer:
+            acao_bot = 1
+        if acao_bot == 1:
+            moves = self.pkm_oponente.moves 
+            move = random.choice(moves)
+            return ("atacar", move)
+        else:
+            opcoes = [
+                pkm for pkm in self.oponente.equipe
+                if  pkm.estar_vivo() and pkm != self.pkm_oponente
+            ]
+            # Caso não tenha opções obriga o bot a atacar
+            if not opcoes:
+                moves = self.pkm_oponente.moves
+                move = random.choice(moves)
+                return ("atacar", move)
+            pkm_escolhido = random.choice(opcoes)
+            self.pkm_oponente = pkm_escolhido
+            print(f"\n{self.oponente.nome} recolheu o Pokémon e enviou {self.pkm_oponente.nome}!")
+            return ("trocar", None)
