@@ -155,17 +155,57 @@ class Batalha:
                 break  
             except ValueError:
                 print("Por favor, digite um número válido.")
-    
+    def _calculo_dano(self, atacante, defensor, move):
+        import random
+        # Verifica o tipo de ataque, antigamente minha ideia era usar um str mas o bool é mais facil pro contato
+        if move.contato:
+            atk = atacante.stats_base["atk"]
+            deff = defensor.stats_base["def"]
+        else:
+            atk = atacante.stats_base["sp_atk"]
+            deff = defensor.stats_base["sp_def"]
+        if deff == 0: deff = 1 # Pra não dar erro 
+        dano_base = (atk / deff) * move.dano
+        stab = 1.5 if move.tipo in atacante.tipo else 1.0 # in para verificar a lista já que podem existir dois tipos
+        random_multi = random.uniform(0.85, 1.0)
+        dano_final = dano_base * stab * random_multi 
+        return max(1, int(dano_final)) # Garante que dê pelo menos 1 de dano se a conta der muito baixa, e arredonda para int assim funciona melhor
+    def _ataque(self, atacante, defensor, move):
+        import random
+        print(f"\n{atacante.nome} usou {move}!")
+        if random.randint(1, 100) > move.acerto: # Calculo de acerto simplês desconsidenrando os modificadores igual a todos as outras partes
+            if atacante.ter_nome(): # Depois eu melhoro o ter_nome()
+                print(f"{atacante.nome} errou o ataque!") 
+            else:
+                print(f"{atacante.poke} errou o ataque!") 
+            return
+        dano = self._calculo_dano(atacante, defensor, move)
+        defensor.hp -= dano 
+        if defensor.hp < 0: 
+            defensor.hp = 0 # Se ficar menor que 0 seria feio
+        if defensor.ter_nome():
+            print(f"{defensor.nome} sofreu {dano} do ataque!")
+        else:
+            print(f"{defensor.poke} sofreu {dano} do ataque!")  
+
     def comecar_batalha(self):
-        if self.trainer.nome:
-            print(f"Você foi desafiado, {self.trainer.nome} quer batalhar!")
+        if self.oponente.nome:
+            print(f"Você foi desafiado, {self.oponente.nome} quer batalhar!")
         else:
             print(f"Você encontrou um {self.pkm_oponente} selvagem!")
         while self._time_vivo(self.jogador) and self._time_vivo(self.oponente):
-            self.executar_turno()
-            if self.fugir(): # Quebra o loop caso for true
+            batalha_continua = self.executar_turno()
+            if not batalha_continua: # Se der False, no caso de uma fuga quebra antes das condições.
                 break
         self.finalizar_batalha() # Ainda tenho que criar a função anunciando o vencedor e etc....
+    def finalizar_batalha(self): # Depois eu modifico isso, por equanto vai ser só o placeholder
+        print("\n======== FIM DA BATALHA ========")
+        if self._time_vivo(self.jogador) and not self._time_vivo(self.oponente):
+            print(f"Parabéns! {self.jogador.nome} venceu a batalha!")
+        elif not self._time_vivo(self.jogador) and self._time_vivo(self.oponente):
+            print(f"Game Over! {self.jogador.nome} foi derrotado...")
+        else:
+            print("A batalha terminou.")
     def _menu(self):
         while True:
             print(f"\n╔══════════════════════════════════════════════════════╗")
@@ -229,10 +269,37 @@ class Batalha:
         print(f"\n======== TURNO {self.turnos} ========")
         acao_player = self._menu() # A saida é em forma de tupla ()
         acao_tipo = acao_player[0]
-        acao_detalhe = acao_player[1] # Se for move ou troca
+        acao_detalhe = acao_player[1] # Se for move porque a trocas já acontecem dentro das funções
         if acao_tipo == "fugir":
-            self.fugir() # falta criar, já que usamos o while logo enquanto a condição estiver funcionando a batalha continua
-        
+            print("Fugiu com sucesso!")
+            return False
+        # Decisão do NPC, depois do fugir porque se o usuário foge não importa.
+        acao_bot = self.npc()
+        bot_tipo = acao_bot[0]
+        bot_detalhe = acao_bot[1]
+        # Player Trocou
+        if acao_tipo == "trocar":
+            if bot_tipo == "atacar":
+                self._ataque(self.pkm_oponente, self.pkm_player, bot_detalhe)
+        # Bot Trocou
+        elif bot_tipo == "trocar":
+            if acao_tipo == "atacar":
+                self._ataque(self.pkm_player, self.pkm_oponente, acao_detalhe)
+        # Os dois atacando
+        elif acao_tipo == "atacar" and bot_tipo == "atacar":
+            vel_player = self.pkm_player.stats_base["speed"]
+            vel_bot = self.pkm_oponente.stats_base["speed"]
+            if vel_player >= vel_bot:
+                self._ataque(self.pkm_player, self.pkm_oponente, acao_detalhe)
+                # Verifica se o oponente morreu antes do movimento dele
+                if self.pkm_oponente.estar_vivo():
+                    self._ataque(self.pkm_oponente, self.pkm_player, bot_detalhe)
+            else:
+                self._ataque(self.pkm_oponente, self.pkm_player, bot_detalhe)
+                if self.pkm_player.estar_vivo():
+                    self._ataque(self.pkm_player, self.pkm_oponente, acao_detalhe)
+        return True # Caso os dois troquem nada acontece
+
     def npc(self):
         import random # Sim ele vai ser "burro"
         acao_bot = random.randint(1, 2)
@@ -256,3 +323,6 @@ class Batalha:
             self.pkm_oponente = pkm_escolhido
             print(f"\n{self.oponente.nome} recolheu o Pokémon e enviou {self.pkm_oponente.nome}!")
             return ("trocar", None)
+
+
+# Erros do teste basico: Pokeon ficou imortal KKKKKKKKKKKKKKKKKKKKKKKKKKK
