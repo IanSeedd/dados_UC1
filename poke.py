@@ -128,13 +128,14 @@ class Batalha:
             print(f"[{i}] {pkm.nome:<12} | {status_hp}")
         print("======================================")
     def _troca_jogador(self):
-        if not self.pkm_player.estar_vivo(): # Caso seja uma troca forçada
-            print(f"\n{self.pkm_player.nome} desmaiou e não pode mais lutar!")
         while True:
             # 1. Mostra o painel com todo o time
             self._mostrar_equipe(self.jogador)
             try:
                 escolha = int(input("Escolha o número do Pokémon que vai entrar: ")) - 1            
+                # Se o player selecionou a troca sem querer e quer voltar
+                if self.pkm_player.estar_vivo() == True and escolha == -1: # 0 porque a escolha subtrai 1
+                    return False # Retoma false pra saber que não teve troca
                 if escolha < 0 or escolha >= len(self.jogador.equipe):
                     print("Escolha inválida! Digite um número da lista.")
                     continue 
@@ -147,9 +148,6 @@ class Batalha:
                 if not pkm_escolhido.estar_vivo():
                     print(f"{pkm_escolhido.nome} está desmaiado! Escolha outro.")
                     continue
-                # Se o player selecionou a troca sem querer e quer voltar
-                if self.pkm_player.estar_vivo() == True and escolha == 0: # 0 porque a escolha subtrai 1
-                    return False # Retoma false pra saber que não teve troca
                 self.pkm_player = pkm_escolhido
                 print(f"\nVai, {self.pkm_player.nome}!")
                 break  
@@ -172,7 +170,7 @@ class Batalha:
         return max(1, int(dano_final)) # Garante que dê pelo menos 1 de dano se a conta der muito baixa, e arredonda para int assim funciona melhor
     def _ataque(self, atacante, defensor, move):
         import random
-        print(f"\n{atacante.nome} usou {move}!")
+        print(f"\n{atacante.nome} usou {move.nome}!")
         if random.randint(1, 100) > move.acerto: # Calculo de acerto simplês desconsidenrando os modificadores igual a todos as outras partes
             if atacante.ter_nome(): # Depois eu melhoro o ter_nome()
                 print(f"{atacante.nome} errou o ataque!") 
@@ -194,6 +192,22 @@ class Batalha:
         else:
             print(f"Você encontrou um {self.pkm_oponente} selvagem!")
         while self._time_vivo(self.jogador) and self._time_vivo(self.oponente):
+            if not self.pkm_player.estar_vivo():
+                if self.pkm_player.nome:
+                    print(f"\n{self.pkm_player.nome} desmaiou e não pode mais lutar!")
+                else:
+                    print(f"\n{self.pkm_player.poke} desmaiou e não pode mais lutar!")
+                self._troca_jogador() 
+            if not self.pkm_oponente.estar_vivo():
+                import random
+                opcoes = [
+                    pkm for pkm in self.oponente.equipe
+                    if  pkm.estar_vivo() and pkm != self.pkm_oponente
+                ]
+                if not opcoes: break # Acaba a batalha se o bot não tiver time
+                pkm_escolhido = random.choice(opcoes)
+                self.pkm_oponente = pkm_escolhido
+                print(f"\nVai {self.pkm_oponente.nome}!")
             batalha_continua = self.executar_turno()
             if not batalha_continua: # Se der False, no caso de uma fuga quebra antes das condições.
                 break
@@ -325,4 +339,113 @@ class Batalha:
             return ("trocar", None)
 
 
-# Erros do teste basico: Pokeon ficou imortal KKKKKKKKKKKKKKKKKKKKKKKKKKK
+# Moves: nome, tipo, contato, dano, alvo, acerto
+# Fisícos:
+earthquake = Move(nome="Earthquake", tipo="Ground", contato=True, dano=100, alvo="", acerto=100)
+waterfall = Move("Waterfall", "Water", True, 80, "", 100)
+close_combat = Move("Close Combat", "Fighting", True, 120, "inimigo", 100)
+brave_bird = Move("Brave Bird", "Flying", True, 120, "inimigo", 100)
+flare_blitz = Move("Flare Blitz", "Fire", True, 120, "inimigo", 100)
+stone_edge = Move("Stone Edge", "Rock", True, 100, "inimigo", 80)
+ice_punch = Move("Ice Punch", "Ice", True, 75, "inimigo", 100)
+water_liquidation = Move("Liquidation", "Water", True, 85, "inimigo", 100)
+gunk_shot = Move("Gunk Shot", "Poison", True, 120, "inimigo", 80)
+crunch = Move("Crunch", "Dark", True, 80, "inimigo", 100)
+outrage = Move("Outrage", "Dragon", True, 120, "inimigo", 100)
+iron_head = Move("Iron Head", "Steel", True, 80, "inimigo", 100)
+u_turn = Move("U-turn", "Bug", True, 70, "inimigo", 100)
+water_shuriken = Move("Water Shuriken", "Water", True, 75, "", 80)
+# Especiais:
+draco_meteor = Move("Draco Meteor", "Dragon", False, 130, "inimigo", 90)
+surf = Move("Surf", "Water", False, 90, "inimigo", 100)
+hydro_pump = Move("Hydro Pump", "Water", False, 110, "inimigo", 80)
+ice_beam = Move("Ice Beam", "Ice", False, 90, "inimigo", 100)
+flamethrower = Move("Flamethrower", "Fire", False, 90, "inimigo", 100)
+fire_blast = Move("Fire Blast", "Fire", False, 110, "inimigo", 85)
+thunderbolt = Move("Thunderbolt", "Electric", False, 90, "inimigo", 100)
+energy_ball = Move("Energy Ball", "Grass", False, 90, "inimigo", 100)
+psychic_move = Move("Psychic", "Psychic", False, 90, "inimigo", 100)
+shadow_ball = Move("Shadow Ball", "Ghost", False, 80, "inimigo", 100)
+sludge_bomb = Move("Sludge Bomb", "Poison", False, 90, "inimigo", 100)
+bug_buzz = Move("Bug Buzz", "Bug", False, 90, "inimigo", 100)
+flash_cannon = Move("Flash Cannon", "Steel", False, 80, "inimigo", 100)
+moonblast = Move("Moonblast", "Fairy", False, 95, "inimigo", 100)
+dark_pulse = Move("Dark Pulse", "Dark", False, 80, "inimigo", 100)
+air_slash = Move("Air Slash", "Flying", False, 75, "inimigo", 95)
+focus_blast = Move("Focus Blast", "Fighting", False, 120, "inimigo", 70)
+
+# --- Moves específicos da equipe da Cynthia ---
+dragon_claw = Move("Dragon Claw", "Dragon", True, 80, "inimigo", 100)
+brick_break = Move("Brick Break", "Fighting", True, 75, "inimigo", 100)
+aqua_jet = Move("Aqua Jet", "Water", True, 40, "inimigo", 100)
+silver_wind = Move("Silver Wind", "Bug", False, 60, "inimigo", 100)
+aurora_beam = Move("Aurora Beam", "Ice", False, 65, "inimigo", 100)
+mirror_coat = Move("Mirror Coat", "Psychic", False, 1, "inimigo", 100) # Placeholder de dano
+# --- Pokémon da Cynthia ---
+spiritomb = Pokemon(
+    poke="Spiritomb", nome="Spiritomb", hp=100, cond="Nenhum", tipo=["Ghost", "Dark"],
+    ability="Pressure", moves=[shadow_ball, dark_pulse, psychic_move, silver_wind], item=None,
+    stat_hp=50, stat_atk=92, stat_deff=108, stat_spatk=92, stat_spdeff=108, stat_speed=35
+)
+
+roserade = Pokemon(
+    poke="Roserade", nome="Roserade", hp=100, cond="Nenhum", tipo=["Grass", "Poison"],
+    ability="Natural Cure", moves=[energy_ball, sludge_bomb, shadow_ball, extra_sensory := Move("Extrasensory", "Psychic", False, 80, "inimigo", 100)], item=None,
+    stat_hp=60, stat_atk=70, stat_deff=65, stat_spatk=125, stat_spdeff=105, stat_speed=90
+)
+
+gastrodon = Pokemon(
+    poke="Gastrodon", nome="Gastrodon", hp=100, cond="Nenhum", tipo=["Water", "Ground"],
+    ability="Sticky Hold", moves=[surf, earthquake, ice_beam, sludge_bomb], item=None,
+    stat_hp=111, stat_atk=83, stat_deff=68, stat_spatk=92, stat_spdeff=82, stat_speed=39
+)
+
+lucario = Pokemon(
+    poke="Lucario", nome="Lucario", hp=100, cond="Nenhum", tipo=["Fighting", "Steel"],
+    ability="Inner Focus", moves=[close_combat, iron_head, extreme_speed := Move("Extreme Speed", "Normal", True, 80, "inimigo", 100), stone_edge], item=None,
+    stat_hp=70, stat_atk=110, stat_deff=70, stat_spatk=115, stat_spdeff=70, stat_speed=90
+)
+
+milotic = Pokemon(
+    poke="Milotic", nome="Milotic", hp=100, cond="Nenhum", tipo="Water",
+    ability="Marvel Scale", moves=[surf, ice_beam, mirror_coat, aqua_jet], item=None,
+    stat_hp=95, stat_atk=60, stat_deff=79, stat_spatk=100, stat_spdeff=125, stat_speed=81
+)
+
+garchomp = Pokemon(
+    poke="Garchomp", nome="Garchomp", hp=100, cond="Nenhum", tipo=["Dragon", "Ground"],
+    ability="Sand Veil", moves=[dragon_claw, earthquake, crunch, brick_break], item=None,
+    stat_hp=108, stat_atk=130, stat_deff=95, stat_spatk=80, stat_spdeff=85, stat_speed=102
+)
+
+# Meus Pokes:
+swampert = Pokemon(
+    poke="Swampert", nome="Mumu", hp=100, cond="Nenhum", tipo=["Water", "Ground"],
+    ability="Torrent", moves=[earthquake, waterfall, brick_break, ice_punch], item=None,
+    stat_hp=100, stat_atk=110, stat_deff=90, stat_spatk=85, stat_spdeff=90, stat_speed=60
+)
+
+krookodile = Pokemon(
+    poke="Krookodile", nome="Sapato", hp=100, cond="Nenhum", tipo=["Ground", "Dark"],
+    ability="Moxie", moves=[earthquake, crunch, stone_edge, close_combat], item=None,
+    stat_hp=95, stat_atk=117, stat_deff=80, stat_spatk=65, stat_spdeff=70, stat_speed=92
+)
+
+greninja = Pokemon(
+    poke="Greninja", nome="Greninja", hp=100, cond="Nenhum", tipo=["Water", "Dark"],
+    ability="Torrent", moves=[water_shuriken, u_turn, gunk_shot, ice_punch], item=None,
+    stat_hp=72, stat_atk=95, stat_deff=67, stat_spatk=103, stat_spdeff=71, stat_speed=122
+)
+
+mewtwo = Pokemon(
+    poke="Mewtwo", nome="Mewtwo", hp=100, cond="Nenhum", tipo="Psychic",
+    ability="Pressure", moves=[psychic_move, energy_ball, thunderbolt, moonblast], item=None,
+    stat_hp=106, stat_atk=110, stat_deff=90, stat_spatk=154, stat_spdeff=90, stat_speed=130
+)
+# Jogadores:
+player = Player(nome="Seed", equipe=[swampert, krookodile, greninja, mewtwo])
+cynthia = Player(nome="Cynthia", equipe=[spiritomb, roserade, gastrodon, lucario, milotic, garchomp])
+
+batalha = Batalha(player, cynthia, True)
+batalha.comecar_batalha()
+    
